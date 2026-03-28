@@ -5,6 +5,7 @@ class SpeechToText {
     constructor(options = {}) {
         this.recognition = null;
         this._isListening = false;
+        this._manualStop = false;
         this._lang = options.lang || 'zh-CN';
         this._continuous = options.continuous !== false;
         this._interimResults = options.interimResults !== false;
@@ -33,6 +34,9 @@ class SpeechToText {
             this._onStart?.();
         };
         this.recognition.onresult = (event) => {
+            // 如果是用户主动停止后的结果，不处理
+            if (this._manualStop)
+                return;
             let finalTranscript = '';
             let interimTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -67,6 +71,7 @@ class SpeechToText {
         this.recognition.onend = () => {
             if (this._isListening) {
                 this._isListening = false;
+                this._manualStop = false;
                 this._onEnd?.();
             }
         };
@@ -74,6 +79,7 @@ class SpeechToText {
     start() {
         if (this._isListening)
             return;
+        this._manualStop = false;
         try {
             this.recognition.lang = this._lang;
             this.recognition.start();
@@ -85,7 +91,7 @@ class SpeechToText {
     stop() {
         if (!this._isListening)
             return;
-        this._isListening = false;
+        this._manualStop = true;
         try {
             this.recognition.stop();
         }

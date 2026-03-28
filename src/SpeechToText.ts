@@ -3,6 +3,7 @@ import { SpeechToTextOptions, SpeechToTextInstance } from './types';
 export class SpeechToText implements SpeechToTextInstance {
   private recognition: any = null;
   private _isListening = false;
+  private _manualStop = false;
   private _lang: string;
   private _continuous: boolean;
   private _interimResults: boolean;
@@ -46,6 +47,9 @@ export class SpeechToText implements SpeechToTextInstance {
     };
 
     this.recognition.onresult = (event: any) => {
+      // 如果是用户主动停止后的结果，不处理
+      if (this._manualStop) return;
+
       let finalTranscript = '';
       let interimTranscript = '';
 
@@ -83,6 +87,7 @@ export class SpeechToText implements SpeechToTextInstance {
     this.recognition.onend = () => {
       if (this._isListening) {
         this._isListening = false;
+        this._manualStop = false;
         this._onEnd?.();
       }
     };
@@ -90,6 +95,7 @@ export class SpeechToText implements SpeechToTextInstance {
 
   start(): void {
     if (this._isListening) return;
+    this._manualStop = false;
 
     try {
       this.recognition.lang = this._lang;
@@ -101,7 +107,7 @@ export class SpeechToText implements SpeechToTextInstance {
 
   stop(): void {
     if (!this._isListening) return;
-    this._isListening = false;
+    this._manualStop = true;
     try {
       this.recognition.stop();
     } catch (e) {

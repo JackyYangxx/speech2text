@@ -2,6 +2,7 @@ import { SpeechToTextOptions, SpeechToTextInstance } from './types';
 export declare class SpeechToText implements SpeechToTextInstance {
     private recognition;
     private _isListening;
+    private _manualStop;
     private _lang;
     private _continuous;
     private _interimResults;
