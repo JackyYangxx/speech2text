@@ -1,0 +1,45 @@
+{
+  "name": "speech2text-web",
+  "version": "1.0.0",
+  "description": "基于 Web Speech API 的语音转文字组件，支持 React/Vue/原生 JS",
+  "type": "module",
+  "main": "dist/speech2text.cjs.js",
+  "module": "dist/speech2text.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/speech2text.esm.js",
+      "require": "./dist/speech2text.cjs.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "keywords": [
+    "speech",
+    "recognition",
+    "voice",
+    "text",
+    "web-speech"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "vue": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.9.6",
+    "rollup-plugin-postcss": "^4.0.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.3.3"
+  }
+}

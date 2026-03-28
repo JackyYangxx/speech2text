@@ -1,0 +1,166 @@
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  background: #1a1a1a;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+h1 {
+  font-size: 24px;
+  color: #f5f5f5;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+select {
+  flex: 1;
+  padding: 12px 16px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 12px;
+  color: #f5f5f5;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+button.start {
+  background: #10b981;
+  color: white;
+}
+
+button.start:hover {
+  background: #059669;
+}
+
+button.stop {
+  background: #ef4444;
+  color: white;
+}
+
+button.stop:hover {
+  background: #dc2626;
+}
+
+.result-area {
+  margin-bottom: 16px;
+}
+
+textarea {
+  width: 100%;
+  height: 200px;
+  padding: 16px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 12px;
+  color: #f5f5f5;
+  font-size: 16px;
+  line-height: 1.6;
+  resize: none;
+  font-family: inherit;
+}
+
+textarea::placeholder {
+  color: #666;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.indicator.idle {
+  background: #666;
+}
+
+.indicator.listening {
+  background: #10b981;
+  animation: pulse 1.5s infinite;
+}
+
+.indicator.error {
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.error {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  color: #ef4444;
+  font-size: 14px;
+}
+
+.info {
+  margin-top: 32px;
+  padding: 20px;
+  background: #262626;
+  border-radius: 12px;
+}
+
+.info h3 {
+  font-size: 14px;
+  color: #a3a3a3;
+  margin-bottom: 12px;
+}
+
+pre {
+  background: #1a1a1a;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 13px;
+  color: #10b981;
+}
