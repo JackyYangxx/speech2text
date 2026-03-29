@@ -14,6 +14,8 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   const instanceRef = useRef<SpeechToText | null>(null);
+  // 跟踪上一次的临时结果，用于去重
+  const lastInterimRef = useRef<string>('');
 
   useEffect(() => {
     if (!SpeechToText.isSupported()) {
@@ -28,9 +30,18 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       interimResults: options.interimResults,
       onResult: (text, isFinal) => {
         if (isFinal) {
-          setTranscript(prev => prev + text);
+          // 如果最终结果的开头包含上一次的临时内容，说明临时内容已被确认为最终内容的一部分
+          // 需要移除临时内容，避免重复
+          const prevInterim = lastInterimRef.current;
+          if (prevInterim && text.startsWith(prevInterim)) {
+            setTranscript(prev => prev.slice(0, -prevInterim.length) + text);
+          } else {
+            setTranscript(prev => prev + text);
+          }
+          lastInterimRef.current = '';
         } else {
           setTranscript(text);
+          lastInterimRef.current = text;
         }
         options.onResult?.(text, isFinal);
       },

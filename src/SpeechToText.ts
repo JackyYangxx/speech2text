@@ -11,6 +11,10 @@ export class SpeechToText implements SpeechToTextInstance {
   private _onStart?: () => void;
   private _onEnd?: () => void;
   private _onError?: (error: string) => void;
+  // 用于去重：记录上次的最终文本，避免重复添加
+  private _lastFinalTranscript = '';
+  // 用于去重：记录本轮会话中所有已处理的最终文本
+  private _processedFinals = new Set<string>();
 
   constructor(options: SpeechToTextOptions = {}) {
     this._lang = options.lang || 'zh-CN';
@@ -54,7 +58,7 @@ export class SpeechToText implements SpeechToTextInstance {
       let interimTranscript = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+        const transcript = event.results[i][0].transcript.trim();
         if (event.results[i].isFinal) {
           finalTranscript += transcript;
         } else {
@@ -62,7 +66,14 @@ export class SpeechToText implements SpeechToTextInstance {
         }
       }
 
+      // 去重：如果这个最终文本在本轮会话中已经处理过，则跳过
+      if (finalTranscript && this._processedFinals.has(finalTranscript)) {
+        return;
+      }
+
       if (finalTranscript) {
+        this._processedFinals.add(finalTranscript);
+        this._lastFinalTranscript = finalTranscript;
         this._onResult?.(finalTranscript, true);
       }
       if (interimTranscript) {
@@ -96,6 +107,8 @@ export class SpeechToText implements SpeechToTextInstance {
   start(): void {
     if (this._isListening) return;
     this._manualStop = false;
+    this._lastFinalTranscript = '';
+    this._processedFinals.clear();
 
     try {
       this.recognition.lang = this._lang;

@@ -6,6 +6,10 @@ class SpeechToText {
         this.recognition = null;
         this._isListening = false;
         this._manualStop = false;
+        // 用于去重：记录上次的最终文本，避免重复添加
+        this._lastFinalTranscript = '';
+        // 用于去重：记录本轮会话中所有已处理的最终文本
+        this._processedFinals = new Set();
         this._lang = options.lang || 'zh-CN';
         this._continuous = options.continuous !== false;
         this._interimResults = options.interimResults !== false;
@@ -40,7 +44,7 @@ class SpeechToText {
             let finalTranscript = '';
             let interimTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
+                const transcript = event.results[i][0].transcript.trim();
                 if (event.results[i].isFinal) {
                     finalTranscript += transcript;
                 }
@@ -48,7 +52,13 @@ class SpeechToText {
                     interimTranscript += transcript;
                 }
             }
+            // 去重：如果这个最终文本在本轮会话中已经处理过，则跳过
+            if (finalTranscript && this._processedFinals.has(finalTranscript)) {
+                return;
+            }
             if (finalTranscript) {
+                this._processedFinals.add(finalTranscript);
+                this._lastFinalTranscript = finalTranscript;
                 this._onResult?.(finalTranscript, true);
             }
             if (interimTranscript) {
@@ -80,6 +90,8 @@ class SpeechToText {
         if (this._isListening)
             return;
         this._manualStop = false;
+        this._lastFinalTranscript = '';
+        this._processedFinals.clear();
         try {
             this.recognition.lang = this._lang;
             this.recognition.start();
@@ -125,6 +137,8 @@ function useSpeechToText$1(options = {}) {
     const [isSupported, setIsSupported] = useState(true);
     const [error, setError] = useState(null);
     const instanceRef = useRef(null);
+    // 跟踪上一次的临时结果，用于去重
+    const lastInterimRef = useRef('');
     useEffect(() => {
         if (!SpeechToText.isSupported()) {
             setIsSupported(false);
@@ -137,10 +151,20 @@ function useSpeechToText$1(options = {}) {
             interimResults: options.interimResults,
             onResult: (text, isFinal) => {
                 if (isFinal) {
-                    setTranscript(prev => prev + text);
+                    // 如果最终结果的开头包含上一次的临时内容，说明临时内容已被确认为最终内容的一部分
+                    // 需要移除临时内容，避免重复
+                    const prevInterim = lastInterimRef.current;
+                    if (prevInterim && text.startsWith(prevInterim)) {
+                        setTranscript(prev => prev.slice(0, -prevInterim.length) + text);
+                    }
+                    else {
+                        setTranscript(prev => prev + text);
+                    }
+                    lastInterimRef.current = '';
                 }
                 else {
                     setTranscript(text);
+                    lastInterimRef.current = text;
                 }
                 options.onResult?.(text, isFinal);
             },

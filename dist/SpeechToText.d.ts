@@ -10,6 +10,8 @@ export declare class SpeechToText implements SpeechToTextInstance {
     private _onStart?;
     private _onEnd?;
     private _onError?;
+    private _lastFinalTranscript;
+    private _processedFinals;
     constructor(options?: SpeechToTextOptions);
     private getSpeechRecognition;
     private initRecognition;
