@@ -6,6 +6,7 @@ class SpeechToText {
         this.recognition = null;
         this._isListening = false;
         this._manualStop = false;
+        this._restarting = false;
         // 用于去重：记录上次的最终文本，避免重复添加
         this._lastFinalTranscript = '';
         // 用于去重：记录本轮会话中所有已处理的最终文本
@@ -35,6 +36,7 @@ class SpeechToText {
         this.recognition.lang = this._lang;
         this.recognition.onstart = () => {
             this._isListening = true;
+            this._restarting = false;
             this._onStart?.();
         };
         this.recognition.onresult = (event) => {
@@ -79,9 +81,25 @@ class SpeechToText {
             this._onError?.(message);
         };
         this.recognition.onend = () => {
-            if (this._isListening) {
+            if (this._manualStop) {
+                // 用户主动停止
                 this._isListening = false;
                 this._manualStop = false;
+                this._onEnd?.();
+            }
+            else if (this._continuous && !this._restarting) {
+                // continuous 模式且非 restart 状态，自动重启
+                try {
+                    this.recognition.start();
+                }
+                catch (e) {
+                    this._isListening = false;
+                    this._onError?.('识别重启失败');
+                }
+            }
+            else {
+                // 非 continuous 模式或正在 restart，正常结束
+                this._isListening = false;
                 this._onEnd?.();
             }
         };
@@ -90,6 +108,7 @@ class SpeechToText {
         if (this._isListening)
             return;
         this._manualStop = false;
+        this._restarting = true;
         this._lastFinalTranscript = '';
         this._processedFinals.clear();
         try {
@@ -97,6 +116,7 @@ class SpeechToText {
             this.recognition.start();
         }
         catch (e) {
+            this._restarting = false;
             this._onError?.('启动识别失败');
         }
     }
@@ -218,6 +238,8 @@ function useSpeechToText(options = {}) {
     const isListening = ref(false);
     const isSupported = ref(true);
     const error = ref(null);
+    // 跟踪上一次的临时结果，用于去重
+    const lastInterimRef = ref('');
     let instance = null;
     const initInstance = () => {
         if (!SpeechToText.isSupported()) {
@@ -231,10 +253,20 @@ function useSpeechToText(options = {}) {
             interimResults: options.interimResults,
             onResult: (text, isFinal) => {
                 if (isFinal) {
-                    transcript.value += text;
+                    // 如果最终结果的开头包含上一次的临时内容，说明临时内容已被确认为最终内容的一部分
+                    // 需要移除临时内容，避免重复
+                    const prevInterim = lastInterimRef.value;
+                    if (prevInterim && text.startsWith(prevInterim)) {
+                        transcript.value = transcript.value.slice(0, -prevInterim.length) + text;
+                    }
+                    else {
+                        transcript.value += text;
+                    }
+                    lastInterimRef.value = '';
                 }
                 else {
                     transcript.value = text;
+                    lastInterimRef.value = text;
                 }
                 options.onResult?.(text, isFinal);
             },

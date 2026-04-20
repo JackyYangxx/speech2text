@@ -3,6 +3,7 @@ export declare class SpeechToText implements SpeechToTextInstance {
     private recognition;
     private _isListening;
     private _manualStop;
+    private _restarting;
     private _lang;
     private _continuous;
     private _interimResults;
