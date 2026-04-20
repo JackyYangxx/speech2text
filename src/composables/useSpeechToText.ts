@@ -12,6 +12,8 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const isListening = ref(false);
   const isSupported = ref(true);
   const error = ref<string | null>(null);
+  // 跟踪上一次的临时结果，用于去重
+  const lastInterimRef = ref('');
 
   let instance: SpeechToText | null = null;
 
@@ -28,9 +30,18 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       interimResults: options.interimResults,
       onResult: (text, isFinal) => {
         if (isFinal) {
-          transcript.value += text;
+          // 如果最终结果的开头包含上一次的临时内容，说明临时内容已被确认为最终内容的一部分
+          // 需要移除临时内容，避免重复
+          const prevInterim = lastInterimRef.value;
+          if (prevInterim && text.startsWith(prevInterim)) {
+            transcript.value = transcript.value.slice(0, -prevInterim.length) + text;
+          } else {
+            transcript.value += text;
+          }
+          lastInterimRef.value = '';
         } else {
           transcript.value = text;
+          lastInterimRef.value = text;
         }
         options.onResult?.(text, isFinal);
       },
