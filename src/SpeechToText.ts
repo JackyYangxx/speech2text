@@ -4,6 +4,7 @@ export class SpeechToText implements SpeechToTextInstance {
   private recognition: any = null;
   private _isListening = false;
   private _manualStop = false;
+  private _restarting = false;
   private _lang: string;
   private _continuous: boolean;
   private _interimResults: boolean;
@@ -47,6 +48,7 @@ export class SpeechToText implements SpeechToTextInstance {
 
     this.recognition.onstart = () => {
       this._isListening = true;
+      this._restarting = false;
       this._onStart?.();
     };
 
@@ -96,9 +98,22 @@ export class SpeechToText implements SpeechToTextInstance {
     };
 
     this.recognition.onend = () => {
-      if (this._isListening) {
+      if (this._manualStop) {
+        // 用户主动停止
         this._isListening = false;
         this._manualStop = false;
+        this._onEnd?.();
+      } else if (this._continuous && !this._restarting) {
+        // continuous 模式且非 restart 状态，自动重启
+        try {
+          this.recognition.start();
+        } catch (e) {
+          this._isListening = false;
+          this._onError?.('识别重启失败');
+        }
+      } else {
+        // 非 continuous 模式或正在 restart，正常结束
+        this._isListening = false;
         this._onEnd?.();
       }
     };
@@ -107,6 +122,7 @@ export class SpeechToText implements SpeechToTextInstance {
   start(): void {
     if (this._isListening) return;
     this._manualStop = false;
+    this._restarting = true;
     this._lastFinalTranscript = '';
     this._processedFinals.clear();
 
@@ -114,6 +130,7 @@ export class SpeechToText implements SpeechToTextInstance {
       this.recognition.lang = this._lang;
       this.recognition.start();
     } catch (e) {
+      this._restarting = false;
       this._onError?.('启动识别失败');
     }
   }
